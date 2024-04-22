@@ -42,7 +42,7 @@ from transformers.utils import (
     logging,
     replace_return_docstrings,
 )
-from .configuration_llama import LlamaConfig
+from configuration_llama import LlamaConfig
 
 
 if is_flash_attn_available():

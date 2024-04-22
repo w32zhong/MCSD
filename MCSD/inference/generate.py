@@ -4,7 +4,7 @@ from typing import List, Optional, Tuple, Union
 import torch
 from transformers.modeling_outputs import ModelOutput, CausalLMOutputWithPast
 
-from . import strategies
+import strategies
 
 
 @dataclass

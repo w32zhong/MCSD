@@ -1,0 +1,7 @@
+transformers==4.34.0
+sentencepiece
+torch>=1.11.0
+accelerate
+accelerate
+bitsandbytes
+protobuf
