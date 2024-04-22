@@ -17,6 +17,7 @@ class DecoderOnlyOutput(ModelOutput):
     acceptance_count: int = None
     draft_token_count: int = None
     invocation_count: int = None
+    init_input_len: int = None
 
 
 class Generator:
@@ -35,12 +36,12 @@ class BaseGenerator:
         self,
         model,
         eos_token_id: int,
-        max_new_tokens: int = 128,
+        max_length: int = 128,
         temp: float = 1,
     ) -> None:
         self.model = model
         self.eos_token_id = eos_token_id
-        self.max_new_tokens = max_new_tokens
+        self.max_length = max_length
         self.temp = temp
 
     def generate(
@@ -92,7 +93,7 @@ class BaseGenerator:
 
             if (
                 self.eos_token_id in input_ids[0, -1:]
-                or input_ids.size(-1) - init_input_len >= self.max_new_tokens
+                or input_ids.size(-1) >= self.max_length
             ):
                 break
         return DecoderOnlyOutput(sequences=input_ids, invocation_count=invocation_count)
@@ -105,16 +106,18 @@ class SpeculativeGenerator:
         target_model,
         eos_token_id: int,
         k_config: Tuple[int],
-        max_new_tokens: int = 128,
+        max_length: int = 128,
         draft_model_temp: float = 1,
         target_model_temp: float = 1,
         replacement: bool = False,
         speculative_sampling: bool = True,
         tree_attn: bool = True,
+        tokenizer = None
     ) -> None:
         self.eos_token_id = eos_token_id
-        self.max_new_tokens = max_new_tokens
+        self.max_length = max_length
         self.strategy: strategies.Strategy = None
+        self.tokenizer = tokenizer
 
         if tree_attn:
             self.strategy = strategies.TreeStrategy(
@@ -148,6 +151,7 @@ class SpeculativeGenerator:
         acceptance_count = 0
 
         init_input_len = input_ids.size(-1)
+        prev_len = init_input_len
 
         while True:
             draft_output = self.strategy.generate_draft(
@@ -176,12 +180,19 @@ class SpeculativeGenerator:
             invocation_count += 1
             acceptance_count += verification_output.acceptance_count
 
+            
+            new_tokens = input_ids[0, prev_len:]
+            new_text = self.tokenizer.decode(new_tokens)
+            print(new_text, flush=True, end=' ')
+            prev_len = input_ids.size(-1)
+
             if (
                 self.eos_token_id in input_ids[0, -self.strategy.max_draft_len :]
-                or input_ids.size(-1) - init_input_len >= self.max_new_tokens
+                or input_ids.size(-1) >= self.max_length
             ):
                 break
         return DecoderOnlyOutput(
+            init_input_len=init_input_len,
             sequences=input_ids,
             acceptance_count=acceptance_count,
             draft_token_count=invocation_count * self.strategy.max_draft_len,

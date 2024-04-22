@@ -1,3 +1,4 @@
+import time
 import torch
 import sys
 sys.path.insert(0, './model/llama_tree_attn')
@@ -31,20 +32,29 @@ generator = SpeculativeGenerator(
     target_model,
     eos_token_id=tokenizer.eos_token_id,
     k_config=(4, 2, 2),
-    max_new_tokens=128,
+    max_length=1900,
     draft_model_temp=1,
     target_model_temp=1,
     replacement=False,
     speculative_sampling=True,
     tree_attn=True,
+    tokenizer=tokenizer
 )
+print('models loaded')
 
 prompt_text = "[INST] tell me something interesting about the solar eclipse in April 2024. [/INST]"
 inputs = tokenizer(prompt_text, return_tensors="pt") #.to("cuda")
 input_ids = inputs.input_ids
-output = generator.generate(input_ids)
-output_text = tokenizer.batch_decode(
-    output.sequences, skip_special_tokens=True, clean_up_tokenization_spaces=False
-)[0]
 
-print("Output:\n{}".format(output_text))
+start_time = time.time()
+with torch.no_grad():
+    output = generator.generate(input_ids)
+time_delta = time.time() - start_time
+
+cnt_tokens = output.sequences.shape[-1] - output.init_input_len
+print('e2e speed:', time_delta, cnt_tokens, cnt_tokens / time_delta)
+
+#output_text = tokenizer.batch_decode(
+#    output.sequences, skip_special_tokens=True, clean_up_tokenization_spaces=False
+#)[0]
+#print("Output:\n{}".format(output_text))
