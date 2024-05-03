@@ -16,13 +16,13 @@ target_path = "NousResearch/Llama-2-7b-chat-hf"
 draft_model = LlamaForCausalLM.from_pretrained(
     drafter_path,
     torch_dtype=torch.float16,
-    device_map="auto",
+    device_map="cuda:0",
     load_in_8bit=True
 )
 target_model = LlamaForCausalLM.from_pretrained(
     target_path,
     torch_dtype=torch.float16,
-    device_map="auto",
+    device_map="cuda:0",
     load_in_8bit=True
 )
 tokenizer = LlamaTokenizer.from_pretrained(target_path)
