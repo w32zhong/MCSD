@@ -1,7 +1,4 @@
-transformers==4.34.1
-huggingface-hub==0.19.4
 sentencepiece
-torch>=1.11.0
 accelerate
 accelerate
 bitsandbytes
